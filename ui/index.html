@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Minecraft Agent 调试台</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/control.css">
+  <link rel="stylesheet" href="/flow.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">MC</span><div><strong>Agent 调试台</strong><small>运行观察与决策记录</small></div></div>
+    <div class="live-state"><span class="pulse"></span><span id="connection-state">等待运行时</span><time id="updated-at">--</time><button class="control-button" id="open-control">启动控制</button></div>
+  </header>
+  <main>
+    <section class="overview" aria-label="当前状态">
+      <div class="metric"><span>生命值</span><strong id="health">--</strong><small id="health-meta">HP</small></div>
+      <div class="metric"><span>饥饿</span><strong id="food">--</strong><small id="food-meta">食物值</small></div>
+      <div class="metric"><span>维度 / 群系</span><strong class="metric-wide" id="location">--</strong><small id="coordinates">位置未知</small></div>
+      <div class="metric"><span>当前动作</span><strong class="metric-wide" id="busy">空闲</strong><small id="runtime-status">运行中</small></div>
+      <div class="metric token-metric"><span>Token 用量</span><strong class="metric-wide" id="token-total">0</strong><small id="token-breakdown">输入 0 · 输出 0</small></div>
+      <div class="metric"><span>脚本运行占比</span><strong class="metric-wide" id="automation-ratio">--</strong><small id="automation-time">自动化 / 等待</small></div>
+      <div class="risk-line" id="risk-line"><span class="risk-dot"></span><span id="risk-text">正在等待环境快照</span></div>
+    </section>
+    <section class="focus-strip" aria-label="当前工作重心">
+      <div><span class="focus-kicker">当前工作重心</span><strong id="focus-title">等待运行时</strong><small id="focus-detail">当前任务和脚本进度将在这里显示</small></div>
+      <div class="focus-progress"><div class="progress-track"><span id="focus-progress-bar"></span></div><small id="focus-progress-label">--</small></div>
+    </section>
+
+    <nav class="tabs" aria-label="调试视图">
+      <button class="tab active" data-tab="flow">运行流程</button>
+      <button class="tab" data-tab="strategy">Strategy 决策</button>
+      <button class="tab" data-tab="environment">周围环境</button>
+      <button class="tab" data-tab="calls">调用记录 <span id="calls-count">0</span></button>
+      <button class="tab" data-tab="agents">其他 AI 输出 <span id="agents-count">0</span></button>
+      <button class="tab" data-tab="tac">Tac 安全事件 <span id="tac-count">0</span></button>
+      <button class="tab" data-tab="memory">LLM 记忆 <span id="memory-count">0</span></button>
+      <button class="tab" data-tab="reflection">Reflection 调试</button>
+    </nav>
+
+    <section class="view active" id="view-flow">
+      <div class="section-head"><div><h1>运行流程</h1><p>各层当前工作状态、动作流转和时间轴</p></div><span class="tag" id="timeline-count">0 条记录</span></div>
+      <article class="panel flow-panel">
+        <div class="layer-flow" id="layer-flow">
+          <div class="layer-node strategic-node" data-layer="strategic"><div class="layer-node-head"><span class="layer-dot"></span><strong>Strategy</strong><span class="layer-status">等待长期规划</span></div><p class="layer-detail">--</p><time>--</time></div>
+          <span class="flow-arrow">→</span>
+          <div class="layer-node distribution-node" data-layer="distribution"><div class="layer-node-head"><span class="layer-dot"></span><strong>Distribution</strong><span class="layer-status">等待任务分发</span></div><p class="layer-detail">--</p><time>--</time></div>
+          <span class="flow-arrow">⇄ 并行</span>
+          <div class="layer-node action-node" data-layer="action"><div class="layer-node-head"><span class="layer-dot"></span><strong>Action</strong><span class="layer-status">等待执行</span></div><p class="layer-detail">--</p><time>--</time></div>
+          <span class="flow-arrow">+</span>
+          <div class="layer-node tac-node" data-layer="tac"><div class="layer-node-head"><span class="layer-dot"></span><strong>Tac</strong><span class="layer-status">监控中</span></div><p class="layer-detail">--</p><time>--</time></div>
+          <span class="flow-arrow">+</span>
+          <div class="layer-node reflection-node" data-layer="reflection"><div class="layer-node-head"><span class="layer-dot"></span><strong>Reflection</strong><span class="layer-status">等待总结</span></div><p class="layer-detail">--</p><time>--</time></div>
+          <span class="flow-arrow">→</span>
+          <div class="layer-node memory-node" data-layer="memory"><div class="layer-node-head"><span class="layer-dot"></span><strong>Memory</strong><span class="layer-status">等待归档</span></div><p class="layer-detail">--</p><time>--</time></div>
+        </div>
+        <div class="inventory-strip" id="flow-inventory"><span class="inventory-title">当前物品栏</span><span class="empty">等待环境快照</span></div>
+        <section class="early-flow" aria-label="早期生存流程进度"><div class="early-flow-head"><strong>早期生存流程</strong><small id="early-flow-position">等待环境快照</small></div><div class="early-flow-track" id="early-flow-track"><div class="empty">等待背包与坐标数据</div></div></section>
+      </article>
+      <article class="panel compact-panel"><div class="panel-head"><h2>工作队列</h2><span class="tag" id="queue-count">等待运行时</span></div><p class="helper-text" id="queue-task">尚无任务</p><p class="helper-text" id="timing-estimate">耗时模型：等待运行数据</p><div id="queue-chain" class="queue-chain"><div class="empty">队列为空</div></div><details class="queue-details"><summary>查看任务参数</summary><div class="task-list" id="work-queue"><div class="empty">队列为空</div></div></details></article>
+      <div class="flow-lower-grid">
+        <article class="panel"><div class="panel-head"><h2>运行时间轴</h2><span class="tag">最新在上</span></div><div class="axis-timeline" id="axis-timeline"><div class="empty">等待运行事件</div></div></article>
+        <article class="panel"><div class="panel-head"><h2>Token 消耗</h2><span class="tag" id="token-source">等待模型 usage</span></div><div class="token-summary"><div><span>输入</span><strong id="token-prompt-detail">0</strong></div><div><span>输出</span><strong id="token-completion-detail">0</strong></div><div><span>合计</span><strong id="token-total-detail">0</strong></div><div><span>请求</span><strong id="token-requests-detail">0</strong></div></div><div class="token-rate-head"><strong>每分钟 Token</strong><span id="token-rate-average">平均 -- / 分钟</span></div><canvas class="token-rate-chart" id="token-rate-chart" aria-label="近30分钟每分钟 Token 消耗曲线"></canvas><p class="helper-text" id="cache-summary">等待缓存命中统计</p><div class="token-provider-breakdown" id="token-provider-breakdown"></div><div class="token-history" id="token-history"><div class="empty">尚无模型请求记录</div></div></article>
+      </div>
+      <article class="panel compact-panel"><div class="panel-head"><h2>调用树</h2><span class="tag">运行时 → 层 → 脚本 / 模型 → API</span></div><div id="call-tree" class="call-tree"><div class="empty">等待调用记录</div></div></article>
+      <div class="reflection-grid">
+        <article class="panel"><div class="panel-head"><h2>调试提示</h2><span class="tag">附加给 Distribution</span></div><p class="helper-text">写下当前实验假设、已知限制或希望下一轮任务分发优先验证的事项。</p><div class="hint-form"><textarea id="debug-hint-input" rows="3" placeholder="例如：当前目标是找铁矿，不要继续采集普通石头。"></textarea><button class="start-button" id="send-debug-hint">加入提示</button></div><div class="hint-list" id="debug-hints"><div class="empty">尚无人工提示</div></div></article>
+      </div>
+    </section>
+
+    <section class="view" id="view-strategy">
+      <div class="section-head"><div><h1>Strategy / Distribution</h1><p>Strategy 维护长期路线，Distribution 根据当前环境分发短期 Action</p></div><span class="tag" id="plan-age">尚无计划</span></div>
+      <article class="panel compact-panel"><div class="panel-head"><h2>Strategy 长期战略</h2><span class="tag" id="strategic-age">尚无战略</span></div><p class="rationale" id="strategic-mission">等待 Strategy 生成长期路线。</p><div class="task-list" id="strategic-objectives"><div class="empty">长期目标生成后显示</div></div></article>
+      <div class="strategy-grid">
+        <article class="panel rationale-panel"><div class="panel-head"><h2>Distribution 当前任务</h2><span class="signal">依据战略和当前观测</span></div><p class="rationale" id="rationale">等待 Distribution 分发首个任务。</p><div class="priorities" id="priorities"></div></article>
+        <article class="panel"><div class="panel-head"><h2>计划任务</h2><span class="tag" id="task-count">0 项</span></div><div class="task-list" id="tasks"><div class="empty">计划生成后显示任务</div></div></article>
+      </div>
+      <article class="panel compact-panel"><div class="panel-head"><h2>Strategy 长期规划输入</h2><button class="quiet-button" id="toggle-context">展开 JSON</button></div><pre id="strategy-context" class="json-view collapsed">等待长期规划。</pre></article>
+      <article class="panel compact-panel"><details><summary>Distribution 当前分发输入（环境与脚本进度）</summary><pre id="distribution-context" class="json-view">等待当前任务输入。</pre></details></article>
+      <article class="panel compact-panel"><div class="panel-head"><h2>子智能体委派</h2><span class="tag">委派协议</span></div><div class="delegation-list" id="delegation"><div class="empty">当前计划没有委派任务</div></div></article>
+    </section>
+
+    <section class="view" id="view-environment">
+      <div class="section-head"><div><h1>周围环境</h1><p>由公开赛事 API 汇总，方块列表仅代表可见探测结果</p></div><span class="tag" id="observation-age">观测 --</span></div>
+      <article class="panel compact-panel"><div class="panel-head"><h2>局部空间结构</h2><button class="quiet-button" id="refresh-space">重新探测</button></div><p class="helper-text" id="space-notes">等待探测脚下支撑、头顶和相邻通道</p><div class="space-slices" id="space-slices"></div><div id="space-directions"></div></article>
+      <article class="panel compact-panel"><div class="panel-head"><h2>进入下界前的准备</h2><span class="tag" id="mission-status">尚未启用</span></div><div id="mission-checks"></div></article>
+      <div class="environment-grid">
+        <article class="panel"><div class="panel-head"><h2>附近实体</h2><span class="tag" id="entity-count">0</span></div><div class="table-wrap"><table><thead><tr><th>类别</th><th>实体</th><th>距离</th><th>生命</th></tr></thead><tbody id="entities"></tbody></table></div></article>
+        <article class="panel"><div class="panel-head"><h2>可见方块摘要</h2><span class="tag" id="block-scan">扫描 --</span></div><div class="block-list" id="blocks"></div></article>
+        <article class="panel"><div class="panel-head"><h2>物品栏与装备</h2><span class="tag" id="empty-slots">空位 --</span></div><div id="equipment-slots" class="equipment-slots"></div><div id="inventory-grid" class="inventory-grid"></div><div class="item-list" id="inventory"></div></article>
+        <article class="panel"><div class="panel-head"><h2>进度</h2><span class="tag" id="advancement-count">--</span></div><div class="event-list" id="advancements"></div></article>
+      </div>
+    </section>
+
+    <section class="view" id="view-calls"><div class="section-head"><div><h1>调用记录</h1><p>Action 工具调用及结果；模型请求/响应按需展开</p></div><button class="quiet-button" id="toggle-raw">显示原始模型内容</button></div><div class="timeline" id="tool-calls"></div><div class="timeline secondary" id="llm-calls"></div></section>
+    <section class="view" id="view-agents"><div class="section-head"><div><h1>其他 AI 输出</h1><p>子智能体或外部策略 worker 可写入的输出流</p></div><span class="tag">由运行时事件接入</span></div><div class="timeline" id="agent-outputs"></div></section>
+    <section class="view" id="view-tac"><div class="section-head"><div><h1>Tac 安全事件</h1><p>紧急处置、死亡和安全触发记录</p></div><span class="tag">实时层</span></div><div class="timeline" id="tac-events"></div></section>
+    <section class="view" id="view-memory"><div class="section-head"><div><h1>记忆归档</h1><p>Strategy / Distribution 可使用筛选后的持久记忆；Reflection 总结不会注入模型上下文</p></div><span class="tag" id="memory-updated">尚未更新</span></div><article class="panel"><div class="timeline" id="memory-entries"></div></article></section>
+    <section class="view" id="view-reflection"><div class="section-head"><div><h1>Reflection 调试记录</h1><p>用于检查运行缺陷、经验总结和调试改进，不作为 Strategy / Distribution 的反思提示</p></div><button class="quiet-button" id="run-reflection">立即总结</button></div><article class="panel"><pre class="reflection-document" id="reflection-document">尚未生成运行总结。</pre><div class="lesson-list" id="reflection-lessons"></div></article></section>
+  </main>
+  <dialog id="control-dialog">
+    <form method="dialog" class="control-card" id="control-form">
+      <div class="control-head"><div><h2>Agent 运行控制</h2><p>凭据只发送给本机调试服务，不会显示在日志或环境面板中。</p></div><button type="button" class="close-button" id="close-control" aria-label="关闭">×</button></div>
+      <div class="form-grid">
+        <label>赛事 API 地址<input id="api-base-url" value="http://127.0.0.1:18900/api/v1" autocomplete="url"></label>
+        <label>皮肤站用户名<input id="mc-username" autocomplete="username"></label>
+        <label>皮肤站密码<input id="mc-password" type="password" autocomplete="current-password"></label>
+        <label>LLM 地址（可选）<input id="llm-base-url" placeholder="https://api.openai.com/v1" autocomplete="url"></label>
+        <label>LLM API Key（可选）<input id="llm-api-key" type="password" autocomplete="off"></label>
+        <label>模型名（可选）<input id="llm-model" placeholder="留空使用启发式策略"></label>
+      </div>
+      <p class="helper-text">启动后配置由 Windows 本机加密保存；登录密码和模型密钥不会写入浏览器存储。之后可留空凭据并从本机加密配置恢复。调试提示、长期记忆与 Reflection 总结会分别保存。</p>
+      <section class="session-controls" aria-labelledby="session-heading">
+        <div class="session-heading"><h3 id="session-heading">运行窗口与预算</h3><span id="session-state">正在读取当前窗口…</span></div>
+        <p class="helper-text" id="session-summary">继续本轮会沿用原截止时间和用量；新一轮会先归档旧记录。</p>
+        <div class="form-grid session-grid">
+          <label>新一轮时长（小时）<input id="session-hours" type="number" min="0.016666666666666666" max="168" step="any" value="4" required></label>
+          <label class="session-unlimited"><input id="session-unlimited" type="checkbox"> 不限制 Token 用量</label>
+          <label>输入 Token 上限<input id="session-input" type="number" min="1" step="1" value="8000000" required></label>
+          <label>输出 Token 上限<input id="session-output" type="number" min="1" step="1" value="1500000" required></label>
+          <label class="session-goal">本轮目标<textarea id="session-goal" rows="3" maxlength="20000" placeholder="填写这一轮要完成的目标；以当前背包、装备和环境为准。" required></textarea></label>
+        </div>
+        <div class="session-new-foot"><p class="helper-text">新一轮按以上设置重新计时、单独计量。旧用量与未结算预留会归档，记忆、背包和脚本进度保留。运行中请先停止 Agent。</p><button type="button" class="start-button" id="new-session">开启新一轮并启动</button></div>
+      </section>
+      <div class="control-foot"><span class="control-error" id="control-error" role="status" aria-live="polite"></span><button type="button" class="control-button" id="restart-agent">应用更新并重启</button><button type="button" class="stop-button" id="stop-agent">停止 Agent</button><button type="button" class="start-button" id="start-agent">继续本轮</button></div>
+    </form>
+  </dialog>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

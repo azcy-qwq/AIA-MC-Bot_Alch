@@ -1,0 +1,15 @@
+{
+  "name": "minecraft-ai-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "ui": "node src/debug/preview.js",
+    "restart:agent": "node scripts/restart-agent.js",
+    "watch:overnight": "node scripts/overnight-watch.js",
+    "build-native": "powershell -ExecutionPolicy Bypass -File native/build.ps1",
+    "check": "node --check base.js && node --check src/index.js",
+    "test": "node --test --test-timeout=20000"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "maidUsefulTask": {
+    "branch": "master",
+    "repo": "zxy19/maid_useful_task",
+    "sha": "59d201f20223cc414c091daebed772a805f2eebf"
+  },
+  "pathfinder": {
+    "repo": "PrismarineJS/mineflayer-pathfinder",
+    "sha": "0eb15c14c441df8a93501430ff42c2130cc11ec9"
+  },
+  "tlm": {
+    "branch": "1.20",
+    "repo": "TartaricAcid/TouhouLittleMaid",
+    "sha": "8a3ac5e9eacf0c6d63adf8832949f3ce81484fe6"
+  },
+  "collectBlock": {
+    "repo": "PrismarineJS/mineflayer-collectblock",
+    "sha": "2e3a79cc1ba6d233272287cb8eb54cd74b599099"
+  },
+  "checkedAt": "2026-11-15T01:29:18.6963114+08:00",
+  "mcAgentApi": {
+    "sha": "555111c700f626f85622901a8cdfa8c55af40fd3",
+    "repo": "Zyzzyva0381/mc-agent-api",
+    "checkedAt": "2026-11-15T02:31:05.4897186+08:00"
+  }
+}
