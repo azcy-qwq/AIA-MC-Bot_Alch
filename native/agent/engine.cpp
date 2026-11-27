@@ -99,11 +99,12 @@ void Engine::sweepVisibleOres(P around,std::vector<P>* harvested){
       "diamond_ore","deepslate_diamond_ore","emerald_ore","deepslate_emerald_ore",
       "nether_quartz_ore","nether_gold_ore"
     });
-    auto before=status(false);P returnTo=point(before["pos"]);
+    auto before=status(false);P returnTo=point(before["pos"]);auto scanInventory=inventory();
+    const bool hasPickaxe=count(scanInventory,"wooden_pickaxe")+count(scanInventory,"stone_pickaxe")+count(scanInventory,"iron_pickaxe")+count(scanInventory,"diamond_pickaxe")+count(scanInventory,"netherite_pickaxe")>0;
     std::set<P> rejected;
     while(true){
       auto found=api("findBlocks",{{"types",oreTypes},{"radius",8},{"limit",128}});std::vector<P> candidates;std::map<P,std::string> resources;
-      for(auto entry:found.value("blocks",J::array()))if(entry.contains("pos")){P q=point(entry["pos"]);auto key=dimension+":"+jp(q).dump();auto memo=state["deferredOres"].value(key,J::object());std::string reason=memo.value("reason",std::string());bool retryForTool=reason=="insufficient_tool_tier";if(distance(q,returnTo)<=8&&!rejected.count(q)&&!protectedAt(q)&&(!state["deferredOres"].contains(key)||retryForTool)){candidates.push_back(q);resources[q]=name(entry);}}
+      for(auto entry:found.value("blocks",J::array()))if(entry.contains("pos")){P q=point(entry["pos"]);auto key=dimension+":"+jp(q).dump();auto memo=state["deferredOres"].value(key,J::object());std::string reason=memo.value("reason",std::string());bool retryForTool=hasPickaxe&&(reason=="insufficient_tool_tier"||reason=="missing_tool");if(distance(q,returnTo)<=8&&!rejected.count(q)&&!protectedAt(q)&&(!state["deferredOres"].contains(key)||retryForTool)){candidates.push_back(q);resources[q]=name(entry);}}
       auto rankingInventory=inventory();int xp=status().value("xp_level",30);
       std::stable_sort(candidates.begin(),candidates.end(),[&](P a,P b){double pa=orePriority(returnTo,a,resources[a],rankingInventory,xp),pb=orePriority(returnTo,b,resources[b],rankingInventory,xp);if(std::abs(pa-pb)>0.05)return pa>pb;return distance(a,returnTo)<distance(b,returnTo);});bool mined=false;
       for(P q:candidates){try{
@@ -115,6 +116,10 @@ void Engine::sweepVisibleOres(P around,std::vector<P>* harvested){
       }catch(const Failure& e){
         if(e.code=="dead"||e.code=="not_ready"||e.code=="survival_priority"||e.code=="cancelled")throw;
         if(e.code=="insufficient_tool_tier")deferOre(q,name(block(q)),e.details.value("requiredTier",3));
+        else if(e.code=="missing_tool"){
+          auto key=dimension+":"+jp(q).dump();state["deferredOres"][key]={{"pos",jp(q)},{"dimension",dimension},{"type",name(block(q))},{"reason","missing_tool"},{"observedAt",wallms()}};save();
+          progress("ore_deferred",{{"pos",jp(q)},{"block",name(block(q))},{"reason","缺少镐，先记录位置并继续下行；获得镐后再回采"}});
+        }
         else if(!std::set<std::string>{"path_not_found","navigation_failed","unreachable","no_path","stalled","unsafe_excavation","falling_block_risk","unsafe_navigation","protected_workarea","out_of_reach","out_of_range","not_visible","no_line_of_sight","dig_unconfirmed"}.count(e.code))throw;
         else {state["deferredOres"][dimension+":"+jp(q).dump()]={{"pos",jp(q)},{"dimension",dimension},{"type",name(block(q))},{"reason",e.code},{"observedAt",wallms()}};save();}
         rejected.insert(q);
@@ -194,7 +199,7 @@ void Engine::deferOre(P p,std::string resource,int requiredTier){
   auto key=dimension+":"+jp(p).dump();
   if(!deferred.contains(key)||deferred[key].value("type",std::string())!=resource){
     if(deferred.size()>=128)deferred.erase(deferred.begin());
-    deferred[key]={{"pos",jp(p)},{"dimension",dimension},{"type",resource},{"requiredTier",requiredTier},{"observedAt",wallms()}};save();
+      deferred[key]={{"pos",jp(p)},{"dimension",dimension},{"type",resource},{"requiredTier",requiredTier},{"reason","insufficient_tool_tier"},{"observedAt",wallms()}};save();
     progress("ore_deferred",{{"pos",jp(p)},{"block",resource},{"requiredTier",requiredTier},{"reason","工具等级不足，记坐标并继续普通探矿，不重复造同级镐"}});
   }
 }

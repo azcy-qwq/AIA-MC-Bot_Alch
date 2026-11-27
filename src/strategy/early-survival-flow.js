@@ -71,7 +71,7 @@ export function estimateEarlySurvivalProgress({ environment = {}, nativeState = 
     logs >= 8 || table || woodenPick,
     woodenPick,
     stonePick && stoneAxe,
-    (logs >= 32 && meat >= 4) || underground,
+    logs >= 32 && meat >= 4,
     underground,
     hasBase,
     (coal > 0 && Number.isFinite(y) && y <= 42) || (Number.isFinite(y) && y < 25),
@@ -83,7 +83,9 @@ export function estimateEarlySurvivalProgress({ environment = {}, nativeState = 
     tableBuilt && portalBuilt,
     enchanted("pickaxe") && enchanted("sword")
   ];
-  if (underground) for (let index = 0; index <= 4; index++) done[index] = true;
+  // Depth confirms the descent stage only. It cannot prove that the bot
+  // collected wood, crafted tools, or stocked food before entering a mine.
+  if (underground) done[4] = true;
   // Advanced equipment is evidence of earlier tool stages even after coal
   // has been spent or the bot has returned to the surface for supplies.
   if (ownedDiamond("pickaxe") && armor >= 2) for (let index = 0; index <= 8; index++) if (index !== 5 || hasBase) done[index] = true;

@@ -141,6 +141,24 @@ void Engine::staircase(bool up,int steps,P v,std::string material,bool allowOpen
     }
     std::vector<P> clear{add(feet,{0,2,0})};for(int dy=2;dy>=0;dy--)clear.push_back(add(next,{0,dy,0}));
     std::vector<P> landing=clear;landing.push_back(ground);observe(landing,true);
+    if(!up){
+      auto currentInventory=inventory();const bool hasPickaxe=count(currentInventory,"wooden_pickaxe")+count(currentInventory,"stone_pickaxe")+count(currentInventory,"iron_pickaxe")+count(currentInventory,"diamond_pickaxe")+count(currentInventory,"netherite_pickaxe")>0;
+      const bool blockedByUnmineableOre=!hasPickaxe&&std::any_of(clear.begin(),clear.end(),[&](P q){auto b=block(q);return ends(name(b),"_ore")||name(b)=="obsidian";});
+      if(blockedByUnmineableOre){
+        const std::array<P,4> candidates={v,P{-v[2],0,v[0]},P{v[2],0,-v[0]},P{-v[0],0,-v[2]}};bool rerouted=false;
+        for(P heading:candidates){
+          P candidate=add(feet,{heading[0],-1,heading[2]}),candidateGround=add(candidate,{0,-1,0});
+          std::vector<P> candidateClear={add(feet,{0,2,0}),add(candidate,{0,2,0}),add(candidate,{0,1,0}),candidate};
+          std::vector<P> candidateChecks=candidateClear;candidateChecks.push_back(candidateGround);observe(candidateChecks,true);
+          if(!support(block(candidateGround)))continue;bool safe=true;
+          for(P cell:candidateClear){auto obstacle=block(cell);if(air(obstacle))continue;auto obstacleName=name(obstacle);if(important(obstacle)||liquid(obstacle)||!terrain(obstacle)||!obstacle.value("diggable",true)||protectedAt(cell)||ends(obstacleName,"_ore")||obstacleName=="obsidian"){safe=false;break;}}
+          if(!safe)continue;v=heading;next=candidate;ground=candidateGround;clear=std::move(candidateClear);rerouted=true;
+          progress("staircase_down_turn",{{"direction",jp(v)},{"pos",jp(feet)},{"message","前方矿物缺少合适镐，沿有支撑的邻近方位继续下行"}});
+          break;
+        }
+        if(!rerouted)throw Failure("ore_blocks_descent","当前楼梯被无法徒手采集的矿物挡住，邻近方位也没有安全落脚点",{{"pos",jp(feet)}});
+      }
+    }
     bool existing=support(block(ground));for(P q:clear)if(!air(block(q)))existing=false;
     if(!existing&&!allowOpenSpace&&exposedAhead(next,v))throw Failure("open_space_ahead","阶梯下一高度的新开挖位置连通到未确认的开放空间，停止继续挖掘",{{"pos",jp(next)}});
 

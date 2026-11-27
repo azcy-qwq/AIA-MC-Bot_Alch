@@ -207,7 +207,7 @@ export function createRuntime({ config = loadConfig(), api, strategyProvider, ev
         }
         if (alive) {
           const rawFlow = estimateEarlySurvivalProgress({ environment: snapshot, nativeState: executor.nativeState });
-          if (progressResetPending && !wasAlive) { await progressLedger.observe(rawFlow, { death: true }); progressResetPending = false; }
+          if (progressResetPending) { await progressLedger.observe(rawFlow, { death: true }); progressResetPending = false; }
           else await progressLedger.observe(rawFlow);
           const phase = estimateEarlySurvivalProgress({ environment: snapshot, nativeState: executor.nativeState, progressLedger: progressSnapshot() }).currentIndex;
           if (lastStrategicPhase !== null && phase !== lastStrategicPhase) {

@@ -8,10 +8,20 @@ test("early survival flow estimates the next stage from inventory and depth evid
   assert.equal(starter.phases[1].status, "active");
   const underground = estimateEarlySurvivalProgress({ environment: { status: { pos: [0, 39, 0] }, inventory: { items: [{ name: "stone_pickaxe", count: 1 }, { name: "stone_axe", count: 1 }, { name: "coal", count: 8 }] } }, nativeState: { workareas: [] } });
   assert.equal(underground.phases[4].status, "done");
-  assert.equal(underground.phases[5].status, "active");
+  assert.equal(underground.phases[3].status, "active");
   const advanced = estimateEarlySurvivalProgress({ environment: { status: { pos: [0, 64, 0] }, inventory: { items: [{ name: "iron_pickaxe", count: 1 }, { name: "iron_axe", count: 1 }] } } });
   assert.equal(advanced.phases[1].status, "done");
   assert.equal(advanced.phases[2].status, "done");
+});
+
+test("depth alone cannot mark wood, tools, or supply stages complete after a respawn", () => {
+  const result = estimateEarlySurvivalProgress({
+    environment: { status: { pos: [0, 51, 0] }, inventory: { items: [] } }
+  });
+  assert.equal(result.phases[0].status, "active");
+  assert.equal(result.phases[1].status, "upcoming");
+  assert.equal(result.phases[3].status, "upcoming");
+  assert.equal(result.phases[4].status, "done");
 });
 
 test('extended route deducts real worn equipment and does not double count held inventory slots',()=>{
